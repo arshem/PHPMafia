@@ -186,7 +186,7 @@ class wolf extends irc {
 	*/
 	public function isAdmin($host) {
 
-		if($host=="Arshem" || $host=="Brandon_Wright") {
+		if($host=="YOURUSERNAME" || $host=="MODNAME") {
 			return true;
 		}
 		return false;
@@ -613,7 +613,7 @@ class wolf extends irc {
 	public function commands($recipient, $message, $nick, $host) {
 
 		if($message==".login" && $this->isAdmin($nick)) {
-			$this->say("NickServ","IDENTIFY firestorm");
+			$this->say("NickServ","IDENTIFY YOUR_PASSWORD");
 		}
 
 		if($message==".logout" && $this->isAdmin($nick)) {
