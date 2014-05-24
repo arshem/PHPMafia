@@ -148,7 +148,7 @@ class wolf extends irc {
 	* @return boolean True or False answer
 	*/
 	public function isCommand ($string, $command, $no_operator=false) {
-		if ( strtolower($string) == '!' . $command || ($no_operator && strtolower($string) == $command) ) {
+		if ( strtolower($string) == '.' . $command || ($no_operator && strtolower($string) == $command) ) {
 			return true;
 		}
 		return false;
@@ -186,16 +186,9 @@ class wolf extends irc {
 	*/
 	public function isAdmin($host) {
 
-		foreach($this->admins as $admin) {
-			$admin = str_replace('.', '\\.', $admin);
-			$admin = str_replace('/', '\/', $admin);
-			$admin = str_replace('*', '.*', $admin);
-
-			if (preg_match("/" . $admin . "$/i", $host) == 1) {
-				return true;
-			}
+		if($host=="Arshem" || $host=="Brandon_Wright") {
+			return true;
 		}
-
 		return false;
 	}
 
@@ -619,6 +612,13 @@ class wolf extends irc {
 	 */
 	public function commands($recipient, $message, $nick, $host) {
 
+		if($message==".login" && $this->isAdmin($nick)) {
+			$this->say("NickServ","IDENTIFY firestorm");
+		}
+
+		if($message==".logout" && $this->isAdmin($nick)) {
+			exit(0);
+		}
 		// Remove double, extraneous whitespaces
 		$message = preg_replace("/\s+/", " ", $message);
 		if ( substr($message, -1, 1) == " " ) {
@@ -639,16 +639,20 @@ class wolf extends irc {
 			$command=$message;
 			$message="";
 		}
-
+		if($this->isCommand($command,'joinchannel') && $this->isAdmin($nick)) {
+			$this->joinChannel($message);
+		}
 		// !help
 		if ( $this->isCommand($command, 'help') ) {
 			$help = $this->string('help');
 			$this->say($nick, $help);
 		}
 
-		// !simple
-		else if ( $this->isCommand($command, 'simple') ) {
-			$this->say($nick, "This feature on phpwolf is not yet available.");
+		if ($this->isCommand($command,'roles')) {
+			$roles = $this->string('roles');
+			foreach($roles as $role) {
+				$this->say($nick,$role);
+			}
 		}
 
 		// !back
@@ -1063,20 +1067,16 @@ class wolf extends irc {
 			$this->say($recipient, $rules_part2);
 		}
 
-		// !admins
-		else if ( $this->isCommand($command, 'admins') ) {
-			$this->say($recipient, "Snuupy is the man for that.");
-		}
-
 		/***** Admin commands *****/
 		// !msg
-		else if ( $this->isCommand($command, 'msg') && $this->isAdmin($host) ) {
+		//$host = $nick;
+		else if ( $this->isCommand($command, 'msg') && $this->isAdmin($nick) ) {
 			$message=explode(" ", $message, 2);
 			$this->say($message["0"], $message["1"]);
 		}
 
 		// !op
-		else if ( $this->isCommand($command, 'op') && $this->isAdmin($host) ) {
+		else if ( $this->isCommand($command, 'op') && $this->isAdmin($nick) ) {
 			$message=explode(" ", $message);
 			if (empty($message["0"]) && $recipient != $nick) { 
 				$this->mode($recipient, '+o', $nick);
@@ -1088,7 +1088,7 @@ class wolf extends irc {
 		}
 
 		// !deop
-		else if ( $this->isCommand($command, 'deop') && $this->isAdmin($host) ) {
+		else if ( $this->isCommand($command, 'deop') && $this->isAdmin($nick) ) {
 			$message=explode(" ", $message);
 			if (empty($message["0"]) && $recipient != $nick) { 
 				$this->mode($recipient, '-o', $nick);
@@ -1100,7 +1100,7 @@ class wolf extends irc {
 		}
 
 		// !voice
-		else if ( $this->isCommand($command, 'voice') && $this->isAdmin($host) ) {
+		else if ( $this->isCommand($command, 'voice') && $this->isAdmin($nick) ) {
 			$message=explode(" ", $message);
 			if (empty($message["0"]) && $recipient != $nick) {
 				$this->mode($recipient, '+v', $nick);
@@ -1112,7 +1112,7 @@ class wolf extends irc {
 		}
 
 		// !devoice
-		else if ( $this->isCommand($command, 'devoice') && $this->isAdmin($host) ) {
+		else if ( $this->isCommand($command, 'devoice') && $this->isAdmin($nick) ) {
 			$message=explode(" ", $message);
 			if (empty($message["0"]) && $recipient != $nick) {
 				$this->mode($recipient, '-v', $nick);
@@ -1124,7 +1124,7 @@ class wolf extends irc {
 		}
 
 		// !quiet
-		else if ( $this->isCommand($command, 'quiet') && $this->isAdmin($host)  ) {
+		else if ( $this->isCommand($command, 'quiet') && $this->isAdmin($nick)  ) {
 			$message=explode(" ", $message);
 			if (empty($message["0"]) && $recipient != $nick) {
 				$this->mode($recipient, '+q', $nick);
@@ -1136,7 +1136,7 @@ class wolf extends irc {
 		}
 
 		// !unquiet
-		else if ( $this->isCommand($command, 'unquiet') && $this->isAdmin($host) ) {
+		else if ( $this->isCommand($command, 'unquiet') && $this->isAdmin($nick) ) {
 			$message=explode(" ", $message);
 			if (empty($message["0"]) && $recipient != $nick) {
 				$this->mode($recipient, '-q', $nick);
@@ -1148,13 +1148,13 @@ class wolf extends irc {
 		}
 
 		// !fstart
-		else if ( $this->isCommand($command, 'fstart') && $this->isAdmin($host) ) {
+		else if ( $this->isCommand($command, 'fstart') && $this->isAdmin($nick) ) {
 			$this->game_wait = 0;
-			$this->commands($recipient, "!start", $nick, $host);
+			$this->commands($recipient, ".start", $nick, $host);
 		}
 
 		// !fstop
-		else if ( $this->isCommand($command, 'fstop') && $this->isAdmin($host) ) {
+		else if ( $this->isCommand($command, 'fstop') && $this->isAdmin($nick) ) {
 			if ($this->ongoing) {
 				$this->endGame($this->channel);
 			} else {
@@ -1165,7 +1165,7 @@ class wolf extends irc {
 		}
 
 		// !fday
-		else if ( $this->isCommand($command, 'fday') && $this->isAdmin($host) ) {
+		else if ( $this->isCommand($command, 'fday') && $this->isAdmin($nick) ) {
 			if ($this->isNight && $this->ongoing) {
 				$length_night_original = $this->setting["length_night"];
 
@@ -1176,7 +1176,7 @@ class wolf extends irc {
 		}
 
 		// !fnight
-		else if ( $this->isCommand($command, 'fnight') && $this->isAdmin($host) ) {
+		else if ( $this->isCommand($command, 'fnight') && $this->isAdmin($nick) ) {
 			if ($this->isDay && $this->ongoing) {
 				$length_day_original = $this->setting["length_day"];
 
@@ -1187,7 +1187,7 @@ class wolf extends irc {
 		}
 
 		// !fjoin
-		else if ( $this->isCommand($command, 'fjoin') && $this->isAdmin($host) ) {
+		else if ( $this->isCommand($command, 'fjoin') && $this->isAdmin($nick) ) {
 			// Trim off everything after a space
 			$space = strpos($message, " ");
 			if ($space !== false) {
@@ -1200,13 +1200,13 @@ class wolf extends irc {
 			} else {
 				$ongoing = $this->ongoing;
 				$this->ongoing = false;
-				$this->commands($recipient, "!join", $message, $host);
+				$this->commands($recipient, ".join", $message, $host);
 				$this->ongoing = $ongoing;
 			}
 		}
 
 		// !fquit and !fleave
-		else if ( ( $this->isCommand($command, 'fquit') || $this->isCommand($command, 'fleave') ) && $this->isAdmin($host) ) {
+		else if ( ( $this->isCommand($command, 'fquit') || $this->isCommand($command, 'fleave') ) && $this->isAdmin($nick) ) {
 			// Trim off everything after a space
 			$space = strpos($message, " ");
 			if ( $space !== false ) {
@@ -1217,18 +1217,18 @@ class wolf extends irc {
 				$parameters=$this->string('parameters', $message);
 				$this->notice($nick, $parameters);
 			} else {
-				$this->commands($recipient, "!quit", $message, $host);
+				$this->commands($recipient, ".quit", $message, $host);
 			}
 		}
 
 		// !fping
-		else if ( $this->isCommand($command, 'fping') && $this->isAdmin($host) ) {
+		else if ( $this->isCommand($command, 'fping') && $this->isAdmin($nick) ) {
 			$this->last_ping = time() - $this->setting["wait_ping"] - 1;
-			$this->commands($recipient, "!ping", $nick, $host);
+			$this->commands($recipient, ".ping", $nick, $host);
 		}
 
 		// !fwait
-		else if ( $this->isCommand($command, 'fwait') && $this->isAdmin($host) ) {
+		else if ( $this->isCommand($command, 'fwait') && $this->isAdmin($nick) ) {
 			$args = explode(' ', trim($message));
 			$time = $args[0];
 
@@ -1246,62 +1246,27 @@ class wolf extends irc {
 			$game_add_wait = $this->setting["game_add_wait"];
 			$this->setting["game_add_wait"] = $time;
 
-			$this->commands($recipient, "!wait", $nick, $host);
+			$this->commands($recipient, ".wait", $nick, $host);
 
 			// Restore default game add wait time
 			$this->setting["game_add_wait"] = $game_add_wait;
 		}
 
 		// !fgoat
-		else if ( $this->isCommand($command, 'fstart') && $this->isAdmin($host) ) {
+		else if ( $this->isCommand($command, 'fgoat') && $this->isAdmin($nick) ) {
 			$this->goat_switch = true;
-			$this->commands($recipient, "!goat", $nick, $host);
+			$this->commands($recipient, ".goat", $nick, $host);
 		}
 
 		// !frestart
-		else if ( $this->isCommand($command, 'frestart') && $this->isAdmin($host) ) {
+		else if ( $this->isCommand($command, 'frestart') && $this->isAdmin($nick) ) {
 			// Hack from -> http://debuggable.com/posts/restarting-a-php-command-line-script:4988968d-b9d0-4fe8-af30-05544834cda3
-			//echo "\nphpwolf: RESTARTING";
-			//die(exec('php ' . str_replace(' ', '\ ', getcwd()) . '/' . implode(' ', $GLOBALS['argv']) . ' > /dev/null &'));
-		}
-
-		// !access
-		else if ( $this->isCommand($command, 'access') ) {
-			$args = explode(" ", $message);
-			if (count($args) < 2) {
-				if (isset($this->admins[$nick])) {
-					$message = $nick . ", You are a bot admin.";
-				} else {
-					$message = $nick . ", You are not a bot admin.";
-				}
-				$this->say($recipient, $message);
-			} else if (!$this->isAdmin($host) ) {
-				$this->say($recipient, $nick . ", You are not a bot admin.");
-			} else {
-				switch($args[0]) {
-					case '+admin':
-						array_push($this->admins, $args[1]);
-						$this->say($recipient, $nick . ", Operation executed successfully.");
-						break;
-					case '-admin':
-						$pos = array_search($args[1], $this->admins);
-						unset($this->admins[$pos]);
-						$this->say($recipient, $nick . ", Operation executed successfully.");
-						break;
-				}
-			}
-		}
-
-		// !execute
-		else if ( $this->isCommand($command, 'execute') && $this->isAdmin($host) ) {
-			$error = eval($message);
-			if ($error === false) {
-				$this->say($recipient, "An error occured in the eval'd code.");
-			}
+			//echo "\n PHPMafia: Rebooting Bot...stay tuned.";
+			die(exec('php ' . str_replace(' ', '\ ', getcwd()) . '/' . implode(' ', $GLOBALS['argv']) . ' > /dev/null &'));
 		}
 
 		// !language
-		else if ( $this->isCommand($command, 'language') && $this->isAdmin($host) ) {
+		else if ( ($this->isCommand($command, 'language') || $this->isCommand($command,'lang')) && $this->isAdmin($nick) ) {
 			// Trim off everything after the first space
 			if (strpos($message, " ")) {
 				$language = substr($message, 0, strpos($message, " "));
@@ -1310,6 +1275,21 @@ class wolf extends irc {
 			}
 
 			$this->locale->setLanguage($language);
+			
+			switch($language) {
+				case 'en_US':
+					$this->say($recipient,"Are you talking to me? Are YOU talking to ME? Mafia theme loaded");
+				break;
+				case 'en_pir':
+					$this->say($recipient,"Arrr Matey, Pirates theme has loaded");
+				break;
+				case 'en_thing':
+					$this->say($recipient,"Are you one of those Things? Loading sample....Thing theme loaded");
+				break;
+				case 'en_wolf':
+					$this->say($recipient,"A wolf bays at the moon...Werewolf theme loaded");
+				break;
+			}
 		}
 
 		/***** Private Role Commands *****/
@@ -2456,6 +2436,9 @@ class wolf extends irc {
 				case 'KICK':
 					$nick = $data["3"];
 				case 'QUIT': // Alias PART
+					if(isset($this->players[$nick])) {
+						$this->commands($recipient,".quit",$nick,$host);
+					}
 				case 'PART':
 					// Remove from peoples list
 					$key = array_search($nick, $this->people);
@@ -2465,13 +2448,18 @@ class wolf extends irc {
 
 					// Quit update for game
 					if (isset($this->players[$nick])) {
-						$this->commands($recipient, "!quit", $nick, $host);
+						$this->commands($recipient, ".quit", $nick, $host);
 					}
 				break;
 				case 'JOIN':
 					// Add to peoples list
 					if ($nick != $this->bot["nick"]) {
 						array_push($this->people, $nick);
+						if($this->ongoing) {
+							$this->say($nick,"We're currently in a game. Please sit tight while we finish up! While you wait, why not check out http://www.reddit.com/r/IRCMafia");
+						} else {
+							$this->say($nick,"Please subscribe to http://www.reddit.com/r/IRCMafia to get more information on scheduled play times, hints, and more!");
+						}
 					}
 				break;
 				case 'NICK':
