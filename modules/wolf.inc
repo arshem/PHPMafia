@@ -1261,7 +1261,7 @@ class wolf extends irc {
 		// !frestart
 		else if ( $this->isCommand($command, 'frestart') && $this->isAdmin($nick) ) {
 			// Hack from -> http://debuggable.com/posts/restarting-a-php-command-line-script:4988968d-b9d0-4fe8-af30-05544834cda3
-			//echo "\n PHPMafia: Rebooting Bot...stay tuned.";
+			echo "\n PHPMafia: Rebooting Bot...stay tuned.";
 			die(exec('php ' . str_replace(' ', '\ ', getcwd()) . '/' . implode(' ', $GLOBALS['argv']) . ' > /dev/null &'));
 		}
 
@@ -2465,8 +2465,7 @@ class wolf extends irc {
 				case 'NICK':
 					// Change nick in people list
 					$implode = implode(' ', $data);
-					$new_nick = explode(':', $implode);
-					$new_nick = end($new_nick);
+					$new_nick = end($data); //NICKSERV sends out the correct username at the end of $data array
 
 					$key = array_search($nick, $this->people);
 					$this->people[$key] = $new_nick;
