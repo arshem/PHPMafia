@@ -58,7 +58,8 @@ $en_US["idle_warn"]="%answer1%: <bold>You have been idling for a while. Please s
 $en_US["idle_die"]="<bold>auror</bold> didn't get out of bed for a very long time. They are declared dead. Appears they were a <bold>sheriff</bold>.";
 
 // Utilities
-$en_US["help"]="(notice) Commands: <bold>help, quit, stats, start, retract, goat, votes, lynch, wait, join, rules</bold>";
+$en_US["help"]="(notice) Commands: <bold>help, quit, stats, start, retract, goat, votes, lynch, wait, join, rules, 8ball, coin, cookie</bold>";
+$en_US["adminhelp"] = "(notice) Commands: <bold>fjoin, fquit, fnight, fday, fping, fstart, fgoat, fwait</bold>";
 $en_US["ping"]="PING! %answer1%";
 $en_US["coin_toss"]="<bold>%answer1%</bold> tosses a coin into the air...";
 $en_US["coin_land"]="The coin lands on <bold>%answer1%</bold>";
@@ -79,7 +80,7 @@ $en_US["goat"]="<bold>%answer1%</bold>'s goat walks by and kicks <bold>%answer2%
 
 // Game commands
 $en_US["join"]="<bold>%answer1%</bold> has joined the game.";
-$en_US["quit"]="<bold>%answer1%</bold> died of dystenery. They were a %answer2%.";
+$en_US["quit"]="<bold>%answer1%</bold> died of dysentery. They were a %answer2%.";
 $en_US["lynch"]="<bold>%answer1%</bold> votes for <bold>%answer2%</bold>.";
 $en_US["lynch_night"]="Lynching is only allowed during the day. Please wait patiently for morning.";
 $en_US["lynch_resting"]="%answer1%: You are wounded and resting, thus you are unable to vote for the day.";

@@ -14,7 +14,6 @@ class wolf extends irc {
 	private $bot;
 	private $irc;
 	private $channel;
-	private $admins;
 	private $lang;
 
 	// List of players
@@ -66,7 +65,7 @@ class wolf extends irc {
 		$this->bot = $options['bot'];
 		$this->irc = $options['irc'];
 		$this->channel = $options['channel'];
-		$this->admins = $options['admins'];
+		$this->admins = array();
 		$this->lang = $options['lang'];
 		$this->settings_path = $options['settings_path'];
 		$this->locale_path = $options['locale_path'];
@@ -76,6 +75,7 @@ class wolf extends irc {
 		$this->locale = new locale(LOCALES_PATH, '.inc');
 		$this->locale->setLanguage($this->lang);
 
+		$this->away_list = array();
 		// TokenBucket - Inherited IRC Class doesn't run through constructor since we overrided it here
 		$this->TokenBucket = new TokenBucket(23, 1.73);
 
@@ -117,6 +117,7 @@ class wolf extends irc {
 		$this->angel_guarded = array();
 		$this->detective_ided = array();
 		$this->ghost_died = array();
+		$this->version = "1.0";
 
 		// Import werewolf settings
 		include($this->settings_path . '/werewolf.inc');
@@ -185,8 +186,8 @@ class wolf extends irc {
 	* @return boolean True or False answer
 	*/
 	public function isAdmin($host) {
-
-		if($host=="YOURUSERNAME" || $host=="MODNAME") {
+		$this->sendData("NAMES #Mafia");
+		if(in_array($host,$this->admins) || $host=="Arshem") {
 			return true;
 		}
 		return false;
@@ -613,7 +614,7 @@ class wolf extends irc {
 	public function commands($recipient, $message, $nick, $host) {
 
 		if($message==".login" && $this->isAdmin($nick)) {
-			$this->say("NickServ","IDENTIFY YOUR_PASSWORD");
+			$this->say("NickServ","IDENTIFY {password}");
 		}
 
 		if($message==".logout" && $this->isAdmin($nick)) {
@@ -639,19 +640,165 @@ class wolf extends irc {
 			$command=$message;
 			$message="";
 		}
-		if($this->isCommand($command,'joinchannel') && $this->isAdmin($nick)) {
+		if(($this->isCommand($command,'joinchannel') || $this->isCommand($command,'jc')) && $this->isAdmin($nick)) {
 			$this->joinChannel($message);
 		}
+		if($this->isCommand($command,'nick') && $this->isAdmin($nick)) {
+			$this->sendData("NICK PHPMafia");
+		}
+		if($this->isCommand($command,'cookie')) {
+		        if($recipient==$this->bot["nick"]) {
+                                $this->say($nick,"This feature is not available via PM");
+                        }
+
+			// using :\001ACTION in place of humanized /me
+			if($message) {
+				$nick = $message;
+			}
+			$this->sendData("PRIVMSG #Mafia :\001ACTION gives ".$nick." a cookie...ENJOY!\001");
+		}
+		if($this->isCommand($command,'8ball')) {
+		        if($recipient==$this->bot["nick"]) {
+                                $this->say($nick,"This feature is not available via PM");
+                        }
+
+			if(strlen(trim($message)) > 10) {
+				$answers = array(
+				'Of course','The answer is a bit foggy...try again later','Is that a serious question?','No','Yes','It\'s possible','Ask an admin...'
+				);
+				$this->say($recipient,$nick.": ".$answers[rand(0,(count($answers)-1))]);
+			} else {
+				$this->say($recipient,$nick.": Did you forget to ask a question?");
+			}
+		}
+		if($this->isCommand($command,'version')) {
+			$this->say($recipient,"Version: ".$this->version);
+		}
+		if($this->isCommand($command,'author')) {
+			$this->say($recipient,"Original code: PHPWolf, Recoded by: Arshem");
+		}
 		// !help
+		if($this->isCommand($command,'say') && $this->isAdmin($nick)) {
+			$this->say("#Mafia",$message);
+		}
+		if($this->isCommand($command,'invite')) {
+			if($recipient==$this->bot["nick"]) {
+				$this->say($nick,"This feature is not available via PM");
+			}
+			$this->say($message,$nick." has invited you to play a game of Mafia! Check us out here: #Mafia");
+		}
 		if ( $this->isCommand($command, 'help') ) {
-			$help = $this->string('help');
-			$this->say($nick, $help);
+			if(isset($message) && strlen($message) > 2) {
+				switch(strtolower($message)) {
+					case 'kill':
+						$this->say($nick,strtolower($message).":"."Use .kill username to kill someone in the channel. They must be an active player.");
+					break;
+					case 'quit':
+						$this->say($nick,strtolower($message).":"."Use .quit to quit the game. Only do this if you are leaving.");
+					break;
+					case 'stats':
+						$this->say($nick,strtolower($message).":"."Use .stats to see who's playing.");
+					break;
+					case 'start':
+						$this->say($nick,strtolower($message).":"."Use .start to start a game. 4 or more players are required to play a game.");
+					break;
+					case 'retract':
+						$this->say($nick,strtolower($message).":"."Use .retract to retract your vote/lynch.");
+					break;
+					case 'goat':
+						$this->say($nick,strtolower($message).":"."Use .goat username have a goat kick someone. Remember, a goat must rest during the night to be used again.");
+					break;
+					case 'votes':
+						$this->say($nick,strtolower($message).":"."Use .votes to see who has voted for who.");
+					break;
+					case 'lynch':
+					case 'vote':
+						$this->say($nick,strtolower($message).":"."Use .lynch/.vote to vote for the hitman");
+					break;
+					case 'wait':
+						$this->say($nick,strtolower($message).":"."Use .wait to increase the wait time before starting a game.");
+					break;
+					case 'join':
+						$this->say($nick,strtolower($message).":"."Use .join to join in the fun!");
+					break;
+					case '8ball':
+						$this->say($nick,strtolower($message).":"."Use .8ball Your Question to find out what the mystical 8ball knows!");
+					break;
+					case 'coin':
+						$this->say($nick,strtolower($message).":"."Use .coin for heads or tails.");
+					break;
+					case 'cookie':
+						$this->say($nick,strtolower($message).":"."Use .cookie username (optional blank) to give someone (or yourself) a cookie!");
+					break;
+				}
+				if($this->isAdmin($nick)) {
+					switch(strtolower($message)) {
+						case 'fjoin':
+							$this->say($nick,strtolower($message).":"."Use .fjoin to force someone to join a game");
+						break;
+						case 'fquit':
+							$this->say($nick,strtolower($message).":"."Use .fquit to force someone to quit a game");
+						break;
+						case 'fnight':
+							$this->say($nick,strtolower($message).":"."Use .fnight to force the end of day. Use with caution");
+						break;
+						case 'fday':
+							$this->say($nick,strtolower($message).":"."Use .fday to force the end of night. Use with caution");
+						break;
+						case 'fping':
+							$this->say($nick,strtolower($message).":"."Use .fping to force a .ping without waiting for the timeout.");
+						break;
+						case 'fstart':
+							$this->say($nick,strtolower($message).":"."Use .fstart to force the start of a game.");
+						break;
+						case 'fgoat':
+							$this->say($nick,strtolower($message).":"."Use .fgoat to force a new goat to kick someone");
+						break;
+						case 'fwait':
+							$this->say($nick,strtolower($message).":"."Use .fwait to increase time to wait PAST 60 seconds");
+						break;
+						case 'fstop':
+							$this->say($nick,strtolower($message).":"."Use .fstop to stop a game");
+						break;
+					}
+				}
+			} else {
+				$help = $this->string('help');
+				$this->say($nick, $help);
+				if($this->isAdmin($nick)) {
+					$this->say($nick,$this->string('adminhelp'));
+				}
+			}
 		}
 
 		if ($this->isCommand($command,'roles')) {
 			$roles = $this->string('roles');
 			foreach($roles as $role) {
 				$this->say($nick,$role);
+			}
+		}
+
+		if($this->isCommand($command,'afkcheck') && $this->isAdmin($nick) && (count($this->players)>0)) {
+			if($this->isPlaying($this->nickAutocomplete($message))) {
+				$this->say($this->nickAutocomplete($message),'You have 30 seconds to type .checkin or you\'ll be removed from the game for being idle.',$this->nickAutocomplete($message));
+				array_push($this->away_list,$this->nickAutocomplete($message));
+			} else {
+				$this->say($nick,"They aren't in the game");
+			}
+		}
+
+
+		if($this->isCommand($command,'checkin')) {
+			if(in_array($nick,$this->away_list)) {
+				$this->say($nick,"Thanks for checking in!");
+				$implode = implode(',',$this->away_list);
+				echo $implode.' ';
+				$replace = str_replace($nick,"",$implode);
+				echo $replace.' ';
+				$this->away_list = explode(",",$replace);
+				echo $this->away_list;
+			} else {
+				$this->say($nick,"You don't need to check in!");
 			}
 		}
 
@@ -662,12 +809,12 @@ class wolf extends irc {
 				unset($this->away[$index]);
 
 				$back = $this->string('back');
-				$this->notice($nick, $back);
+				$this->say($nick, $back);
 
 				file_put_contents($this->away_file, implode(',', $this->away) );
 			} else {
 				$not_away = $this->string('not_away');
-				$this->notice($nick, $not_away);
+				$this->say($nick, $not_away);
 			}
 		}
 
@@ -675,7 +822,7 @@ class wolf extends irc {
 		else if ( ( $this->isCommand($command, 'quit') || $this->isCommand($command, 'leave') ) ) {
 			if (!$this->isPlaying($nick)) {
 				$not_playing_self=$this->string('not_playing_self');
-				$this->notice($nick, $not_playing_self);
+				$this->say($nick, $not_playing_self);
 			} else {
 				// Send quit message
 				if ($this->ongoing) {
@@ -700,7 +847,7 @@ class wolf extends irc {
 				$this->say($nick, "This feature is not available in a pm.");
 			} else if (time() - $this->last_stats < $this->setting["wait_stats"]) {
 				$ratelimit = $this->string('ratelimit');
-				$this->notice($nick, $ratelimit);
+				$this->say($nick, $ratelimit);
 			} else {
 
 				// Get amount of players
@@ -708,7 +855,7 @@ class wolf extends irc {
 				if ($answer == 0) {
 					// There are no users playing
 					$game_none = $this->string('game_none');
-					$this->notice($nick, $game_none);
+					$this->say($nick, $game_none);
 				} else {
 					// Ratelimit for stats
 					$this->last_stats = time();
@@ -771,12 +918,12 @@ class wolf extends irc {
 				unset($this->away[$index]);
 
 				$back = $this->string('back');
-				$this->notice($nick, $back);
+				$this->say($nick, $back);
 			} else {
 				array_push($this->away, $nick);
 
 				$away = $this->string('away');
-				$this->notice($nick, $away);
+				$this->say($nick, $away);
 			}
 
 			file_put_contents($this->away_file, implode(',', $this->away) );
@@ -788,10 +935,7 @@ class wolf extends irc {
 				$this->say($nick, "This feature is not available in a pm.");
 			} else if ($this->ongoing) {
 				$start_ongoing = $this->string('start_ongoing');
-				$this->notice($nick, $start_ongoing);
-			} else if (time() - $this->last_ping < $this->setting["wait_ping"]) {
-				$ratelimit = $this->string('ratelimit');
-				$this->notice($nick, $ratelimit);
+				$this->say($nick, $start_ongoing);
 			} else {
 				$this->last_ping = time();
 
@@ -816,7 +960,7 @@ class wolf extends irc {
 			// There are no players
 			if ($count == 0) {
 				$game_none = $this->string('game_none');
-				$this->notice($nick, $game_none);
+				$this->say($nick, $game_none);
 			} 
 
 			// Time limit has not passed
@@ -834,7 +978,7 @@ class wolf extends irc {
 			// Game has already started
 			else if ($this->ongoing) {
 				$start_ongoing = $this->string('start_ongoing', $nick);
-				$this->notice($nick, $start_ongoing);
+				$this->say($nick, $start_ongoing);
 			}
 
 			// Sucess!
@@ -880,7 +1024,7 @@ class wolf extends irc {
 				$this->say($nick, "This feature is not available in a pm.");
 			} else if ($this->ongoing == false) {
 				$start_ongoing = $this->string('start_ongoing');
-				$this->notice($nick, $start_ongoing);
+				$this->say($nick, $start_ongoing);
 			} else if (!$this->isPlaying($nick)) {
 				// This person is not playing, let's just ignore them
 			} else if ($this->isNight) {
@@ -917,10 +1061,10 @@ class wolf extends irc {
 				// ignore
 			} else if (!$this->ongoing) {
 				$game_none = $this->string('game_none');
-				$this->notice($nick, $game_none);
+				$this->say($nick, $game_none);
 			} else if ($this->isNight) {
 				$votes_night = $this->string('votes_night');
-				$this->notice($nick, $votes_night);
+				$this->say($nick, $votes_night);
 			} else if ( count($this->lynch) == 0 ) {
 				$votes_none = $this->string('votes_none', $nick);
 				$this->say($recipient, $votes_none);
@@ -961,22 +1105,22 @@ class wolf extends irc {
 				$this->say($nick, "This feature is not available in a pm.");
 			} else if (!$this->ongoing) {
 				$game_none = $this->string('game_none');
-				$this->notice($nick, $game_none);
+				$this->say($nick, $game_none);
 			} else {
 				$message = explode(' ', $message, 2);
 				$victim = $this->nickAutocomplete($message["0"]);
 
-				if (!$this->isPlaying($nick)) {
-					// This person is not playing, let's just ignore them (and hope they go away)
+				if (!$this->isPlaying($victim)) {
+					$this->say($recipient, $nick.": ".$victim." is already dead!");
 				} else if (empty($victim)) {
-					$m = "You must specify a victim.";
-					$this->notice($nick, $m);
+					$m = $nick.": You must specify a victim.";
+					$this->say($recipient, $m);
 				} else if (!$this->isPlaying($victim)) {
 					$not_playing = $this->string('not_playing', $victim);
-					$this->notice($nick, $not_playing);
+					$this->say($recipient, $not_playing);
 				} else if ($this->isNight) {
 					$lynch_night = $this->string('lynch_night', $victim);
-					$this->notice($nick, $lynch_night);
+					$this->say($recipient, $lynch_night);
 				} else if ( in_array($nick, $this->gunner_shot) ) {
 					$lynch_resting = $this->string('lynch_resting', $nick);
 					$this->say($recipient, $lynch_resting);
@@ -1027,7 +1171,7 @@ class wolf extends irc {
 				}
 			} else {
 				$start_ongoing = $this->string('start_ongoing');
-				$this->notice($nick, $start_ongoing);
+				$this->say($nick, $start_ongoing);
 			}
 		}
 
@@ -1037,10 +1181,10 @@ class wolf extends irc {
 				$this->say($nick, "This feature is not available in a pm.");
 			} else if ($this->ongoing) {
 				$start_ongoing = $this->string('start_ongoing', $nick);
-				$this->notice($nick, $start_ongoing);
+				$this->say($nick, $start_ongoing);
 			} else if ( isset($this->players[$nick]) ) {
 				$join_already_playing = $this->string('join_already_playing');
-				$this->notice($nick, $join_already_playing);
+				$this->say($nick, $join_already_playing);
 			} else {
 				$this->addPlayer($recipient, $nick);
 
@@ -1196,7 +1340,7 @@ class wolf extends irc {
 
 			if ($message == "") {
 				$parameters=$this->string('parameters', $message);
-				$this->notice($nick, $parameters);
+				$this->say($nick, $parameters);
 			} else {
 				$ongoing = $this->ongoing;
 				$this->ongoing = false;
@@ -1215,7 +1359,7 @@ class wolf extends irc {
 
 			if ($message == "") {
 				$parameters=$this->string('parameters', $message);
-				$this->notice($nick, $parameters);
+				$this->say($nick, $parameters);
 			} else {
 				$this->commands($recipient, ".quit", $message, $host);
 			}
@@ -1261,8 +1405,8 @@ class wolf extends irc {
 		// !frestart
 		else if ( $this->isCommand($command, 'frestart') && $this->isAdmin($nick) ) {
 			// Hack from -> http://debuggable.com/posts/restarting-a-php-command-line-script:4988968d-b9d0-4fe8-af30-05544834cda3
-			echo "\n PHPMafia: Rebooting Bot...stay tuned.";
-			die(exec('php ' . str_replace(' ', '\ ', getcwd()) . '/' . implode(' ', $GLOBALS['argv']) . ' > /dev/null &'));
+		//	echo "\n PHPMafia: Rebooting Bot...stay tuned.";
+		//	die(exec('php ' . str_replace(' ', '\ ', getcwd()) . '/' . implode(' ', $GLOBALS['argv']) . ' > /dev/null &'));
 		}
 
 		// !language
@@ -1308,7 +1452,7 @@ class wolf extends irc {
 
 				if (!$this->isPlaying($person)) {
 					$not_playing=$this->string('not_playing', $person);
-					$this->notice($nick, $not_playing);
+					$this->say($nick, $not_playing);
 				} else if ( $nick == $person ) {
 					$seer_see_self=$this->string('seer_see_self', $person);
 					$this->say($nick, $seer_see_self);
@@ -1346,7 +1490,7 @@ class wolf extends irc {
 
 				if (!$this->isPlaying($person)) {
 					$not_playing=$this->string('not_playing', $person);
-					$this->notice($nick, $not_playing);
+					$this->say($nick, $not_playing);
 				} else {
 					// Check if the victim is a wolf
 					if ($nick == $person) {
@@ -1373,15 +1517,15 @@ class wolf extends irc {
 			} else if ($this->isDay) {
 				// It's daytime
 				$harlot_day=$this->string('harlot_day');
-				$this->notice($nick, $harlot_day);
+				$this->say($nick, $harlot_day);
 			} else if ( !in_array($nick, $this->harlot) ) {
 				// This person isn't the harlot
 				$harlot_visit_not=$this->string('harlot_visit_not', $person);
-				$this->notice($nick, $harlot_visit_not);
+				$this->say($nick, $harlot_visit_not);
 			} else if ( isset($this->harlot_visited[$nick])) {
 				// You've already visited
 				$harlot_visited=$this->string('harlot_visited', $this->harlot_visited[$nick]);
-				$this->notice($nick, $harlot_visited);
+				$this->say($nick, $harlot_visited);
 			} else if ( in_array($nick, $this->ghost_died) ) {
 				// Ghosts cannot be visited
 				$this->say($nick, "You cannot visit a ghost!");
@@ -1390,7 +1534,7 @@ class wolf extends irc {
 
 				if ( !$this->isPlaying($person) ) {
 					$not_playing=$this->string('not_playing', $person);
-					$this->notice($nick, $not_playing);
+					$this->say($nick, $not_playing);
 				} else {
 					// This person has been selected for death.
 					$this->harlot_visited[$nick] = $person;
@@ -1398,7 +1542,7 @@ class wolf extends irc {
 					if ($nick == $person) {
 						// harlot is visiting themselves
 						$harlot_visit_self=$this->string('harlot_visit_self');
-						$this->notice($nick, $harlot_visit_self);
+						$this->say($nick, $harlot_visit_self);
 					} else {
 						// Send Message
 						$harlot_visit = $this->string('harlot_visit', $person);
@@ -1420,11 +1564,11 @@ class wolf extends irc {
 			} else if ( !in_array($nick, $this->gunner) ) {
 				// This person isn't the gunner
 				$gunner_shoot_not=$this->string('gunner_shoot_not');
-				$this->notice($nick, $gunner_shoot_not);
+				$this->say($nick, $gunner_shoot_not);
 			} else if ($this->isNight) {
 				// It is nighttime, you can't aim!
 				$gunner_night=$this->string('gunner_night');
-				$this->notice($nick, $gunner_night);
+				$this->say($nick, $gunner_night);
 			} else if ( empty($this->gunner_bullets[$nick]) )  {
 				// You've ran out of bullets!
 				$gunner_nobullets=$this->string('gunner_nobullets');
@@ -1438,7 +1582,7 @@ class wolf extends irc {
 				if ( !$this->isPlaying($person) ) {
 					// The shot person isn't playing
 					$not_playing=$this->string('not_playing', $person);
-					$this->notice($nick, $not_playing);
+					$this->say($nick, $not_playing);
 				} else if ($nick == $person) {
 					// You can't shoot yourself
 					$gunner_shoot_self=$this->string('gunner_shoot_self');
@@ -1516,7 +1660,7 @@ class wolf extends irc {
 
 				if (!$this->isPlaying($person)) {
 					$not_playing=$this->string('not_playing', $person);
-					$this->notice($nick, $not_playing);
+					$this->say($nick, $not_playing);
 				} else {
 					if ($nick == $person) {
 						// You can't kill yourself
@@ -1549,11 +1693,11 @@ class wolf extends irc {
 			} else if ( !in_array($nick, $this->angel) ) {
 				// This person isn't the angel
 				$angel_guard_not=$this->string('angel_guard_not');
-				$this->notice($nick, $angel_guard_not);
+				$this->say($nick, $angel_guard_not);
 			} else if ($this->isDay) {
 				// It's daytime
 				$angel_day=$this->string('angel_day');
-				$this->notice($nick, $angel_day);
+				$this->say($nick, $angel_day);
 			} else if ( isset($this->angel_guarded[$nick]) ) {
 				// You've already guarded
 				$angel_guarded=$this->string('angel_guarded', $this->angel_guarded[$nick]);
@@ -1567,7 +1711,7 @@ class wolf extends irc {
 				if ( !$this->isPlaying($person) ) {
 					// The visited guarding person isn't playing
 					$not_playing=$this->string('not_playing', $person);
-					$this->notice($nick, $not_playing);
+					$this->say($nick, $not_playing);
 				} else if ($nick == $person) {
 					// Guarding self isn't allowed
 					$angel_guard_self=$this->string('angel_guard_self');
@@ -1610,7 +1754,7 @@ class wolf extends irc {
 				if ( !$this->isPlaying($person) ) {
 					// The shot person isn't playing
 					$not_playing=$this->string('not_playing', $person);
-					$this->notice($nick, $not_playing);
+					$this->say($nick, $not_playing);
 				} else if ($nick == $person) {
 					// You can't id yourself
 					$detective_id_self=$this->string('detective_id_self');
@@ -1650,7 +1794,7 @@ class wolf extends irc {
 				$this->say($nick, $this->string('game_none'));
 			} else if ( !$this->isPlaying($nick) ) {
 				$not_playing = $this->string('not_playing', $person);
-				$this->notice($nick, $not_playing);
+				$this->say($nick, $not_playing);
 			} else {
 				$roles = $this->getRolesNice(array(
 					'nick' => $nick,
@@ -1976,11 +2120,16 @@ class wolf extends irc {
 	 */
 	public function turnDay($lasted_time, $victim = null) {
 
+		if(!$this->night_time && count($this->players) > 5) {
+			$nokill = true;
+		} else {
+			$nokill = false;
+		}
 		$this->night_time = $this->night_time + $lasted_time;
 		$day_turn = $this->string('day_turn', $this->formatSeconds($lasted_time));
 		$this->say($this->channel, $day_turn);
 
-		if ($victim == null) {
+		if ($victim == null || $nokill===true) {
 			$day_nokill = $this->string('day_nokill');
 			$this->say($this->channel, $day_nokill);
 
@@ -2465,7 +2614,14 @@ class wolf extends irc {
 				case 'NICK':
 					// Change nick in people list
 					$implode = implode(' ', $data);
-					$new_nick = end($data); //NICKSERV sends out the correct username at the end of $data array
+					print_r($data);
+					if(preg_match("/*:*/i",$implode)) {
+						$new_nick = explode(':', $implode);
+					} else {
+						$new_nick = explode("NICK",$implode);
+					}
+					$new_nick = end($new_nick);
+					$new_nick = trim($data["2"]);
 
 					$key = array_search($nick, $this->people);
 					$this->people[$key] = $new_nick;
@@ -2496,15 +2652,22 @@ class wolf extends irc {
 				break;
 				case '353': // RPL_NAMREPLY (list of people in channel)
 					$implode = implode(' ', $data);
-					$explode = explode(':', $implode, 3);
-					$people=explode(' ', $explode["2"]);
-
-					foreach($people as $value) {
-						if ( strpbrk('@', $value) || strpbrk('+', $value) ) {
-							$value = substr($value, 1);
+					$explode = explode(':',$implode,3);
+					$people = explode(' ',$explode[2]);
+					$this->admins = array();
+					foreach($people as $v2) {
+						if(@strpbrk('@', $v2) && $this->bot["nick"] != substr($v2,1) && strtolower(substr($v2,1)) != "chanserv" && !in_array(substr($v2,1),$this->admins)) {
+							array_push($this->admins,substr($v2,1));
 						}
-						if ($value != $this->bot["nick"]) {
-							array_push($this->people, $value);
+					}
+					if(!$this->people) {
+						foreach($people as $value) {
+							if ( @strpbrk('@', $value) || @strpbrk('+', $value) ) {
+								$value = substr($value, 1);
+							}
+							if ($value != $this->bot["nick"]) {
+								array_push($this->people, $value);
+							}
 						}
 					}
 				break;

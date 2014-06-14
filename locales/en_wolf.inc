@@ -58,7 +58,8 @@ $en_wolf["idle_warn"]="%answer1%: <bold>You have been idling for a while. Please
 $en_wolf["idle_die"]="<bold>auror</bold> didn't get out of bed for a very long time. S/He is declared dead. Appears (s)he was a <bold>seer</bold>.";
 
 // Utilities
-$en_wolf["help"]="(notice) Commands: <bold>help, simple, back, quit, stats, away, ping, start, retract, goat, shoot, votes, lynch, coin, wait, join, rules, admins</bold>";
+$en_wolf["help"]="(notice) Commands: <bold>help, quit, stats, start, retract, goat, votes, lynch, coin, wait, join, rules, cookies, 8ball</bold>";
+$en_wolf["adminhelp"] = "(notice) Commands: <bold>fjoin, fquit, fnight, fday, fping, fstart, fgoat, fwait</bold>";
 $en_wolf["ping"]="PING. %answer1%";
 $en_wolf["coin_toss"]="<bold>%answer1%</bold> tosses a coin into the air...";
 $en_wolf["coin_land"]="The coin lands on <bold>%answer1%</bold>";

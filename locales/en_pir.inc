@@ -52,7 +52,8 @@ $en_pir["idle_warn"]="%answer1%: <bold>Matey, you've been in bed for a while. Pl
 $en_pir["idle_die"]="<bold>auror</bold> didn't get out of bed for a very long time. S/He is declared dead. Appears (s)he was a <bold>seer</bold>.";
 
 // Utilities
-$en_pir["help"]="(notice) Commands: <bold>help, simple, back, quit, stats, away, ping, start, retract, goat, shoot, votes, lynch, coin, wait, join, rules, admins</bold>";
+$en_pir["help"]="(notice) Commands: <bold>help, quit, stats, away, start, retract, goat, votes, lynch, coin, wait, join, rules, 8ball, cookie</bold>";
+$en_pir["adminhelp"] = "(notice) Commands: <bold>fjoin, fquit, fnight, fday, fping, fstart, fgoat, fwait</bold>";
 $en_pir["ping"]="PING! %answer1%";
 $en_pir["coin_toss"]="<bold>%answer1%</bold> tosses a coin into the air...";
 $en_pir["coin_land"]="The coin lands on <bold>%answer1%</bold>";

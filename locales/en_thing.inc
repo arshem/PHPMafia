@@ -58,7 +58,8 @@ $en_thing["idle_warn"]="%answer1%: <bold>You have been idling for a while. Pleas
 $en_thing["idle_die"]="<bold>auror</bold> didn't get out of bed for a very long time. They are declared dead by suicide. Appears they were a <bold>sheriff</bold>.";
 
 // Utilities
-$en_thing["help"]="(notice) Commands: <bold>help, quit, stats, start, retract, goat, votes, lynch, wait, join, rules</bold>";
+$en_thing["help"]="(notice) Commands: <bold>help, quit, stats, start, retract, goat, votes, lynch, wait, join, rules, 8ball, coin, cookies</bold>";
+$en_thing["adminhelp"] = "(notice) Commands: <bold>fjoin, fquit, fnight, fday, fping, fstart, fgoat, fwait</bold>";
 $en_thing["ping"]="PING! %answer1%";
 $en_thing["coin_toss"]="<bold>%answer1%</bold> tosses a coin into the air...";
 $en_thing["coin_land"]="The coin lands on <bold>%answer1%</bold>";
