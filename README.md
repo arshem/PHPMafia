@@ -1,8 +1,8 @@
-# phpwolf
+# PHPMafia
 
 ## What is this?
 
-phpwolf is an IRC bot written in PHP, allowing users to play the popular Werewolf game. This implementation of wolf is very similar to [wolfbot-new](http://code.google.com/p/wolfbot-new/), and takes upon many of the same features.
+PHPMafia is an IRC bot written in PHP, allowing users to play the popular Werewolf game. This implementation is originally from gluxon/phpwolf, but coded towards the folks at irc.snoonet.org #Mafia
 
 ## What is Werewolf?
 
@@ -31,4 +31,8 @@ This is licensed [GPLv3](http://www.gnu.org/licenses/gpl.html).
 
 ## Status
 
-As of Christmas, the only requirement left to completion is IDLE check. The web implementation will be written with a Node.js server and ideally AJAX communication (WebSockets if not). Follow progress for the server at [WolfSpider](http://github.com/gluxon/WolfSpider).
+Currently we are adding features. 
+
+## Known Bugs
+- Net splits cause failure of re-authorizations
+- Guest##### causes bot to fail to load commands for guards
